@@ -166,6 +166,8 @@ private:
 
     void updateUniforms();
     
+    void loadCameraFromFile();
+    
     void renderOnceAndSave();
 };
 

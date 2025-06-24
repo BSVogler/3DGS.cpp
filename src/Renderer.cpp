@@ -14,12 +14,14 @@
 
 #include "vulkan/Utils.h"
 #include "ImageSaver.h"
+#include "CameraConfig.h"
 
 #include <spdlog/spdlog.h>
 
 void Renderer::initialize() {
     initializeVulkan();
     createGui();
+    loadCameraFromFile();
     loadSceneToGPU();
     createPreprocessPipeline();
     createPrefixSumPipeline();
@@ -759,6 +761,29 @@ void Renderer::updateUniforms() {
     uniformBuffer->upload(&data, sizeof(UniformBuffer), 0);
 }
 
+void Renderer::loadCameraFromFile() {
+    if (configuration.cameraPath.has_value()) {
+        try {
+            spdlog::info("Loading camera configuration from: {}", configuration.cameraPath.value());
+            
+            auto cameraConfig = CameraConfig::loadFromFile(configuration.cameraPath.value());
+            
+            // Apply camera configuration
+            camera.position = cameraConfig.position;
+            camera.rotation = cameraConfig.rotation;
+            camera.fov = cameraConfig.fov;
+            camera.nearPlane = cameraConfig.nearPlane;
+            camera.farPlane = cameraConfig.farPlane;
+            
+            spdlog::info("Camera loaded successfully - Position: ({:.2f}, {:.2f}, {:.2f}), FOV: {:.1f}°", 
+                        camera.position.x, camera.position.y, camera.position.z, camera.fov);
+                        
+        } catch (const std::exception& e) {
+            spdlog::error("Failed to load camera configuration: {}", e.what());
+            spdlog::info("Using default camera settings");
+        }
+    }
+}
 
 void Renderer::renderOnceAndSave() {
     // Headless rendering - simulate the normal draw loop but without presentation

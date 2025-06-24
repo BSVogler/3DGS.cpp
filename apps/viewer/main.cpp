@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<uint32_t> heightFlag{parser, "height", "Set window height", {'h', "height"}};
     args::Flag noGuiFlag{parser, "no-gui", "Disable GUI", { "no-gui"}};
     args::ValueFlag<std::string> outputFlag{parser, "output", "Output image path for headless rendering", {'o', "output"}};
+    args::ValueFlag<std::string> cameraFlag{parser, "camera", "Camera configuration file path", {'c', "camera"}};
     args::Positional<std::string> scenePath{parser, "scene", "Path to scene file", "scene.ply"};
 
     try {
@@ -90,6 +91,10 @@ int main(int argc, char** argv) {
     if (outputFlag) {
         config.outputPath = args::get(outputFlag);
         config.enableGui = false;
+    }
+
+    if (cameraFlag) {
+        config.cameraPath = args::get(cameraFlag);
     }
 
     auto width = widthFlag ? args::get(widthFlag) : 1280;
