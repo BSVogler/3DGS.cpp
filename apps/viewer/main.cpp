@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     } catch (const std::exception& e) {
         spdlog::critical(e.what());
         std::cout << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 #endif
     return 0;

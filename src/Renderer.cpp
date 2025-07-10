@@ -763,25 +763,19 @@ void Renderer::updateUniforms() {
 
 void Renderer::loadCameraFromFile() {
     if (configuration.cameraPath.has_value()) {
-        try {
-            spdlog::info("Loading camera configuration from: {}", configuration.cameraPath.value());
-            
-            auto cameraConfig = CameraConfig::loadFromFile(configuration.cameraPath.value());
-            
-            // Apply camera configuration
-            camera.position = cameraConfig.position;
-            camera.rotation = cameraConfig.rotation;
-            camera.fov = cameraConfig.fov;
-            camera.nearPlane = cameraConfig.nearPlane;
-            camera.farPlane = cameraConfig.farPlane;
-            
-            spdlog::info("Camera loaded successfully - Position: ({:.2f}, {:.2f}, {:.2f}), FOV: {:.1f}°", 
-                        camera.position.x, camera.position.y, camera.position.z, camera.fov);
-                        
-        } catch (const std::exception& e) {
-            spdlog::error("Failed to load camera configuration: {}", e.what());
-            spdlog::info("Using default camera settings");
-        }
+        spdlog::info("Loading camera configuration from: {}", configuration.cameraPath.value());
+        
+        auto cameraConfig = CameraConfig::loadFromFile(configuration.cameraPath.value());
+        
+        // Apply camera configuration
+        camera.position = cameraConfig.position;
+        camera.rotation = cameraConfig.rotation;
+        camera.fov = cameraConfig.fov;
+        camera.nearPlane = cameraConfig.nearPlane;
+        camera.farPlane = cameraConfig.farPlane;
+        
+        spdlog::info("Camera loaded successfully - Position: ({:.2f}, {:.2f}, {:.2f}), FOV: {:.1f}°", 
+                    camera.position.x, camera.position.y, camera.position.z, camera.fov);
     }
 }
 
