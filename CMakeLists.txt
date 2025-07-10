@@ -27,6 +27,7 @@ if (WIN32 OR APPLE)
     endif()
 
     set(GLM_ENABLE_CXX_20 ON CACHE INTERNAL "Enable experimental features")
+    set(GLM_DISABLE_AUTO_DETECTION ON CACHE INTERNAL "Disable auto detection to avoid poison-system-directories warning")
 
     FetchContent_Declare(
             glm
