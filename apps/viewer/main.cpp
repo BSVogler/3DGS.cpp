@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     // check that the scene file exists
     if (!std::filesystem::exists(config.scene)) {
         spdlog::critical("File does not exist: {}", config.scene);
-        return 0;
+        return 1;
     }
 
     if (validationLayersFlag) {
