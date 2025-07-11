@@ -552,10 +552,23 @@ bool Renderer::recordRenderCommandBuffer(uint32_t currentFrame) {
             sortBufferSizeMultiplier++;
         }
         spdlog::info("Reallocating sort buffers. {} -> {}", old, sortBufferSizeMultiplier);
-        sortKBufferEven->realloc(scene->getNumVertices() * sizeof(uint64_t) * sortBufferSizeMultiplier);
-        sortKBufferOdd->realloc(scene->getNumVertices() * sizeof(uint64_t) * sortBufferSizeMultiplier);
-        sortVBufferEven->realloc(scene->getNumVertices() * sizeof(uint32_t) * sortBufferSizeMultiplier);
-        sortVBufferOdd->realloc(scene->getNumVertices() * sizeof(uint32_t) * sortBufferSizeMultiplier);
+        
+        try {
+            sortKBufferEven->realloc(scene->getNumVertices() * sizeof(uint64_t) * sortBufferSizeMultiplier);
+            sortKBufferOdd->realloc(scene->getNumVertices() * sizeof(uint64_t) * sortBufferSizeMultiplier);
+            sortVBufferEven->realloc(scene->getNumVertices() * sizeof(uint32_t) * sortBufferSizeMultiplier);
+            sortVBufferOdd->realloc(scene->getNumVertices() * sizeof(uint32_t) * sortBufferSizeMultiplier);
+        } catch (const std::exception& e) {
+            spdlog::error("Failed to reallocate sort buffers: {}", e.what());
+            spdlog::error("GPU may be out of memory. Required size: {} MB per buffer", 
+                         (scene->getNumVertices() * sizeof(uint64_t) * sortBufferSizeMultiplier) / (1024.0 * 1024.0));
+            
+            // Reset multiplier to previous value
+            sortBufferSizeMultiplier = old;
+            
+            // Exit gracefully
+            std::exit(1);
+        }
 
         uint32_t globalInvocationSize = scene->getNumVertices() * sortBufferSizeMultiplier /
                                         numRadixSortBlocksPerWorkgroup;
@@ -564,7 +577,12 @@ bool Renderer::recordRenderCommandBuffer(uint32_t currentFrame) {
 
         auto numWorkgroups = (globalInvocationSize + 256 - 1) / 256;
 
-        sortHistBuffer->realloc(numWorkgroups * 256 * sizeof(uint32_t));
+        try {
+            sortHistBuffer->realloc(numWorkgroups * 256 * sizeof(uint32_t));
+        } catch (const std::exception& e) {
+            spdlog::error("Failed to reallocate histogram buffer: {}", e.what());
+            std::exit(1);
+        }
 
         recordPreprocessCommandBuffer();
         return false;
