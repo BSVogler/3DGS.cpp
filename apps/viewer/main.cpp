@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<uint32_t> heightFlag{parser, "height", "Set window height", {'h', "height"}};
     args::Flag noGuiFlag{parser, "no-gui", "Disable GUI", { "no-gui"}};
     args::ValueFlag<std::string> outputFlag{parser, "output", "Output image path for headless rendering", {'o', "output"}};
-    args::ValueFlag<std::string> cameraFlag{parser, "camera", "Camera configuration file path", {'c', "camera"}};
+    args::ValueFlagList<std::string> cameraFlag{parser, "camera", "Camera configuration file path(s)", {'c', "camera"}};
     args::Positional<std::string> scenePath{parser, "scene", "Path to scene file", "scene.ply"};
 
     try {
@@ -93,8 +93,21 @@ int main(int argc, char** argv) {
         config.enableGui = false;
     }
 
+    // Handle multiple camera configurations
+    std::vector<std::string> cameraPaths;
     if (cameraFlag) {
-        config.cameraPath = args::get(cameraFlag);
+        cameraPaths = args::get(cameraFlag);
+        
+        // Multiple cameras only make sense with output path
+        if (cameraPaths.size() > 1 && !outputFlag) {
+            spdlog::critical("Multiple camera configurations can only be used with output path (-o)");
+            return 1;
+        }
+        
+        // For single camera, use the existing logic
+        if (cameraPaths.size() == 1) {
+            config.cameraPath = cameraPaths[0];
+        }
     }
 
     auto width = widthFlag ? args::get(widthFlag) : 1280;
@@ -110,8 +123,25 @@ int main(int argc, char** argv) {
 #ifndef DEBUG
     try {
 #endif
-    auto renderer = VulkanSplatting(config);
-    renderer.start();
+    // Handle multiple camera configurations
+    if (cameraPaths.size() > 1) {
+        spdlog::info("Rendering with {} camera configurations", cameraPaths.size());
+        
+        for (size_t i = 0; i < cameraPaths.size(); ++i) {
+            spdlog::info("Rendering with camera configuration {}: {}", i + 1, cameraPaths[i]);
+            
+            // Create a new config for this camera
+            auto cameraConfig = config;
+            cameraConfig.cameraPath = cameraPaths[i];
+            
+            auto renderer = VulkanSplatting(cameraConfig);
+            renderer.start();
+        }
+    } else {
+        // Single camera or no camera - use existing logic
+        auto renderer = VulkanSplatting(config);
+        renderer.start();
+    }
 #ifndef DEBUG
     } catch (const std::exception& e) {
         spdlog::critical(e.what());
