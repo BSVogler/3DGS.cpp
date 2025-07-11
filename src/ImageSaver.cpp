@@ -4,12 +4,36 @@
 #include "ImageSaver.h"
 #include "vulkan/Buffer.h"
 #include <spdlog/spdlog.h>
+#include <filesystem>
+
+std::string generateIncrementalPath(const std::string& dirPath) {
+    std::filesystem::path dir(dirPath);
+    int counter = 1;
+    
+    while (true) {
+        std::string filename = std::to_string(counter) + ".png";
+        std::filesystem::path fullPath = dir / filename;
+        
+        if (!std::filesystem::exists(fullPath)) {
+            return fullPath.string();
+        }
+        counter++;
+    }
+}
 
 void ImageSaver::saveImage(const std::shared_ptr<VulkanContext>& context, 
                           const std::shared_ptr<Image>& image, 
                           const std::string& outputPath) {
     
-    spdlog::info("Starting image save to {} ({}x{})", outputPath, image->extent.width, image->extent.height);
+    std::string finalPath = outputPath;
+    
+    // Check if outputPath is a directory
+    if (std::filesystem::is_directory(outputPath)) {
+        finalPath = generateIncrementalPath(outputPath);
+        spdlog::info("Directory detected, using incremental filename: {}", finalPath);
+    }
+    
+    spdlog::info("Starting image save to {} ({}x{})", finalPath, image->extent.width, image->extent.height);
     
     auto imageSize = image->extent.width * image->extent.height * 4; // RGBA
     
@@ -40,17 +64,17 @@ void ImageSaver::saveImage(const std::shared_ptr<VulkanContext>& context,
 
     spdlog::debug("Format conversion complete, writing PNG file");
 
-    int result = stbi_write_png(outputPath.c_str(), 
+    int result = stbi_write_png(finalPath.c_str(), 
                                static_cast<int>(image->extent.width), 
                                static_cast<int>(image->extent.height), 
                                4, data, 
                                static_cast<int>(image->extent.width * 4));
 
     if (result == 0) {
-        throw std::runtime_error("Failed to save image to " + outputPath);
+        throw std::runtime_error("Failed to save image to " + finalPath);
     }
 
-    spdlog::info("Saved image to {}", outputPath);
+    spdlog::info("Saved image to {}", finalPath);
 }
 
 void ImageSaver::copyImageToBuffer(const std::shared_ptr<VulkanContext>& context,
