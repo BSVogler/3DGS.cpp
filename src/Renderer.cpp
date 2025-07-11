@@ -801,7 +801,10 @@ void Renderer::renderOnceAndSave() {
     // Headless rendering - simulate the normal draw loop but without presentation
     
     // Simulate normal frame acquisition 
-    context->device->waitForFences(inflightFences[0].get(), VK_TRUE, UINT64_MAX);
+    auto ret = context->device->waitForFences(inflightFences[0].get(), VK_TRUE, UINT64_MAX);
+    if (ret != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to wait for fence");
+    }
     context->device->resetFences(inflightFences[0].get());
     
     // Use first swapchain image
@@ -814,7 +817,7 @@ void Renderer::renderOnceAndSave() {
     auto submitInfo = vk::SubmitInfo{}.setCommandBuffers(preprocessCommandBuffer.get());
     context->queues[VulkanContext::Queue::COMPUTE].queue.submit(submitInfo, inflightFences[0].get());
 
-    auto ret = context->device->waitForFences(inflightFences[0].get(), VK_TRUE, UINT64_MAX);
+    ret = context->device->waitForFences(inflightFences[0].get(), VK_TRUE, UINT64_MAX);
     if (ret != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to wait for fence");
     }
