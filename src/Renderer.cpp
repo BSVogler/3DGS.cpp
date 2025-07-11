@@ -798,7 +798,7 @@ void Renderer::loadCameraFromFile() {
 }
 
 void Renderer::renderOnceAndSave() {
-    // Headless rendering - simulate the normal draw loop but without presentation
+    // Headless rendering - render a single frame without presentation
     
     // Simulate normal frame acquisition 
     auto ret = context->device->waitForFences(inflightFences[0].get(), VK_TRUE, UINT64_MAX);
@@ -810,7 +810,7 @@ void Renderer::renderOnceAndSave() {
     // Use first swapchain image
     currentImageIndex = 0;
 
-    handleInput();
+    // Skip handleInput() in headless mode - no user interaction
     updateUniforms();
 
     // Submit preprocessing (same as normal draw())
